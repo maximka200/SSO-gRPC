@@ -3,8 +3,10 @@ package main
 import (
 	"log/slog"
 	"os"
+	"os/signal"
 	app "sso/internal/app"
 	"sso/internal/config"
+	"syscall"
 )
 
 const (
@@ -19,8 +21,17 @@ func main() {
 	log.Info("starting application", slog.Any("config", cfg))
 
 	application := app.New(log, cfg.GRPC.Port, cfg.StoragePath, cfg.TokenTTL)
-	application.MustRun()
+	go application.MustRun()
 	// run server
+
+	stop := make(chan os.Signal, 1)
+
+	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
+	<-stop
+
+	application.GRPCSrv.Stop()
+
+	log.Info("application stopped")
 }
 
 // создаем логгер
