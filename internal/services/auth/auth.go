@@ -15,16 +15,16 @@ import (
 
 var (
 	ErrInvalidCredentials = errors.New("invalid credentials")
-	ErrUserExists = errors.New("user exist")
-	ErrInvalidAppID = errors.New("invalid appID")
+	ErrUserExists         = errors.New("user exist")
+	ErrInvalidAppID       = errors.New("invalid appID")
 )
 
 type Auth struct {
-	log *slog.Logger
-	usrSaver UserSaver
+	log         *slog.Logger
+	usrSaver    UserSaver
 	usrProvider UserProvider
 	appProvider AppProvider
-	tokenTTL time.Duration
+	tokenTTL    time.Duration
 }
 
 type UserSaver interface {
@@ -41,13 +41,13 @@ type AppProvider interface {
 }
 
 // New returns a new object of the Auth struct
-func NewAuth(log slog.Logger, usrSaver UserSaver, usrProvider UserProvider, appProvider AppProvider, tokenTTL time.Duration) *Auth {
+func NewAuth(log *slog.Logger, usrSaver UserSaver, usrProvider UserProvider, appProvider AppProvider, tokenTTL time.Duration) *Auth {
 	return &Auth{
-		log: &log,
-		usrSaver: usrSaver,
+		log:         log,
+		usrSaver:    usrSaver,
 		usrProvider: usrProvider,
 		appProvider: appProvider,
-		tokenTTL: tokenTTL,
+		tokenTTL:    tokenTTL,
 	}
 }
 
@@ -61,7 +61,7 @@ func (a *Auth) Login(ctx context.Context, email string, password string, appID i
 
 	log.Info("attempting to login user")
 
-	user, err := a.usrProvider.User(ctx, email) 
+	user, err := a.usrProvider.User(ctx, email)
 	if err != nil {
 		if errors.Is(err, storage.ErrUserNotFound) {
 			log.Error("not corrected login/password")
@@ -123,7 +123,7 @@ func (a *Auth) RegisterNewUser(ctx context.Context, email string, password strin
 	return id, nil
 }
 
-func (a *Auth) IsAdmin(ctx context.Context, email string, userId int64) (bool, error) {
+func (a *Auth) IsAdmin(ctx context.Context, userId int64) (bool, error) {
 	const op = "auth.IsAdmin"
 
 	log := slog.With(slog.String("op", op), slog.Int64("userId", userId))

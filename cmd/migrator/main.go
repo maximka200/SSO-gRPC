@@ -1,10 +1,14 @@
-package migrator
+package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
-	"errors"
-	"github.com/golang-migrate/migrate"
+
+	// драйвера для работы с бд и файлами
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/sqlite3"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 func main() {
@@ -18,7 +22,7 @@ func main() {
 		panic("migration or storage path is empty")
 	}
 
-	m, err := migrate.New("file://" + migrationPath, fmt.Sprintf("sqllite3://%s?x-migration-table=%s", storagePath, migrationTable)) // mb sourceUrl working only for unix system
+	m, err := migrate.New("file://"+migrationPath, fmt.Sprintf("sqlite3://%s?x-migration-table=%s", storagePath, migrationTable)) // mb sourceUrl working only for unix system
 	if err != nil {
 		panic(fmt.Sprintf("error create migration: %s", err))
 	}

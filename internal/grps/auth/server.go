@@ -2,6 +2,9 @@ package auth
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"sso/internal/services/storage"
 
 	ssov1 "github.com/GolangLessons/protos/gen/go/sso"
 	"google.golang.org/grpc"
@@ -12,9 +15,9 @@ import (
 const emptyValue = 0
 
 type Auth interface {
-	Login(ctx context.Context, email string, password string, appId int32) (token string, err error)
+	Login(ctx context.Context, email string, password string, appId int64) (token string, err error)
 	RegisterNewUser(ctx context.Context, email string, password string) (userID int64, err error)
-	isAdmin(ctx context.Context, userID int64) (flag bool, err error)
+	IsAdmin(ctx context.Context, userID int64) (flag bool, err error)
 }
 
 type serverAPI struct {
@@ -36,10 +39,11 @@ func (s *serverAPI) Login(ctx context.Context, req *ssov1.LoginRequest) (*ssov1.
 	if req.GetAppId() == emptyValue {
 		return nil, status.Error(codes.InvalidArgument, "app_id is empty")
 	}
-	// todo: impl Login
-	token, err := s.auth.Login(ctx, req.Email, req.Password, req.AppId)
+	token, err := s.auth.Login(ctx, req.Email, req.Password, int64(req.AppId))
 	if err != nil {
-		// todo: различитель not correct password/login & iternal err
+		if errors.Is(err, storage.ErrUserNotFound) {
+			return nil, status.Error(codes.NotFound, "User not found")
+		}
 		return nil, status.Error(codes.Internal, "Not correctly password/login or internal error")
 	}
 
@@ -55,8 +59,11 @@ func (s *serverAPI) IsAdmin(ctx context.Context, req *ssov1.IsAdminRequest) (*ss
 		return nil, status.Error(codes.InvalidArgument, "user_id is empty")
 	}
 
-	IsAdmin, err := s.auth.isAdmin(ctx, req.GetUserId())
+	IsAdmin, err := s.auth.IsAdmin(ctx, req.GetUserId())
 	if err != nil {
+		if errors.Is(err, storage.ErrUserNotFound) {
+			return nil, status.Error(codes.NotFound, fmt.Sprintf("User not found with id: %d", req.GetUserId()))
+		}
 		return nil, status.Error(codes.Internal, "Not correctly user_id or internal error")
 	}
 
@@ -72,8 +79,10 @@ func (s *serverAPI) Register(ctx context.Context, req *ssov1.RegisterRequest) (*
 	}
 	userId, err := s.auth.RegisterNewUser(ctx, req.GetEmail(), req.GetPassword())
 	if err != nil {
-		// handling зфыы
-		return nil, status.Error(codes.Internal, "Already regist or internal error")
+		if errors.Is(err, storage.ErrUserExist) {
+			return nil, status.Error(codes.AlreadyExists, fmt.Sprintf("User already exist with email: %s", req.GetEmail()))
+		}
+		return nil, status.Error(codes.Internal, "Internal error")
 	}
 	return &ssov1.RegisterResponse{UserId: userId}, nil
 }

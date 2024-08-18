@@ -4,3 +4,8 @@ tasks:
   run:
     cmds:
       - go run cmd/sso/main.go --config=./config/local.yaml
+  migration_up:
+    cmds:
+      - go run ./cmd/migrator --storage-path=./internal/storage/sso.db --migration-path=./migrations
+  
+# go env -w CGO_ENABLED=1
