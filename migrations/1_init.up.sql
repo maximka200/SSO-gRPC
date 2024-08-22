@@ -12,3 +12,6 @@ CREATE TABLE IF NOT EXISTS apps (
     name VARCHAR(255) UNIQUE NOT NULL,
     secret TEXT NOT NULL
 );
+
+INSERT INTO apps (name, secret)
+VALUES ('test', 'test-secret');
