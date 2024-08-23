@@ -31,7 +31,7 @@ func MustLoad() *Config {
 
 func MustByLoad(configPath string) *Config {
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		panic("config file doesnt exist: " + configPath)
+		panic("config file doesnt exist:" + configPath)
 	}
 
 	var cfg Config
@@ -46,7 +46,7 @@ func MustByLoad(configPath string) *Config {
 // парсинг path-a конфига из командной строки в виде: --config="path/path/..."
 func fetchConfig() string {
 	var res string
-	flag.StringVar(&res, "config", "", "path to config file")
+	flag.StringVar(&res, "config", "./config/local.yaml", "path to config file")
 	flag.Parse()
 
 	if res == "" {

@@ -3,7 +3,6 @@ package suite
 import (
 	"context"
 	"net"
-	"os"
 	"sso/internal/config"
 	"strconv"
 	"testing"
@@ -27,7 +26,7 @@ func NewSuite(t *testing.T) (context.Context, *Suite) {
 	t.Helper()   // для пометки функции как вспомогательной
 	t.Parallel() // параллельные тесты
 
-	key := os.Getenv("CONFIG_PATH")
+	key := "../config/local.yaml"
 	cfg := config.MustByLoad(key)
 
 	// создаем контекст

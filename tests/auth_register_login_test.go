@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"fmt"
 	suite "sso/tests/suit"
 	"testing"
 	"time"
@@ -54,4 +55,32 @@ func TestRegisterLogin_Login_HappyPath(t *testing.T) {
 	const deltaSeconds = 1
 
 	assert.InDelta(t, loginTime.Add(st.Cfg.TokenTTL).Unix(), claims["exp"].(float64), deltaSeconds) // проверка tokenTTL
+}
+
+func TestRegisterLogin_DuplicateRegistration(t *testing.T) {
+	ctx, st := suite.NewSuite(t)
+
+	email := gofakeit.Email()
+	password := gofakeit.Password(true, true, true, true, false, passDefLen)
+
+	respReq, err := st.AuthClient.Register(ctx, &ssov1.RegisterRequest{Email: email, Password: password})
+	require.NoError(t, err)
+	assert.NotEmpty(t, respReq.GetUserId())
+
+	respReq, err = st.AuthClient.Register(ctx, &ssov1.RegisterRequest{Email: email, Password: password})
+	require.Error(t, err)
+	assert.Empty(t, respReq.GetUserId())
+	assert.ErrorContains(t, err, fmt.Sprintf("User already exist with email: %s", email))
+}
+
+func TestLogin_InvalidCredentials(t *testing.T) {
+	ctx, st := suite.NewSuite(t)
+
+	email := gofakeit.Email()
+	password := gofakeit.Password(true, true, true, true, false, passDefLen)
+
+	respReq, err := st.AuthClient.Login(ctx, &ssov1.LoginRequest{Email: email, Password: password, AppId: 1})
+	require.Error(t, err)
+	assert.Empty(t, respReq.GetToken())
+	assert.ErrorContains(t, err, "Invalid credentials")
 }
