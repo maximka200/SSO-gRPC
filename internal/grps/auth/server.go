@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"sso/internal/services/auth"
 
-	ssov1 "github.com/GolangLessons/protos/gen/go/sso"
+	ssov1 "github.com/maximka200/buffpr/gen/go/sso"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -18,6 +18,7 @@ type Auth interface {
 	Login(ctx context.Context, email string, password string, appId int64) (token string, err error)
 	RegisterNewUser(ctx context.Context, email string, password string) (userID int64, err error)
 	IsAdmin(ctx context.Context, userID int64) (flag bool, err error)
+	CreateApp(ctx context.Context, name string, secret string) (appId int64, err error)
 }
 
 type serverAPI struct {
@@ -56,7 +57,7 @@ func (s *serverAPI) Logout(ctx context.Context, req *ssov1.LogoutRequest) (*ssov
 
 func (s *serverAPI) IsAdmin(ctx context.Context, req *ssov1.IsAdminRequest) (*ssov1.IsAdminResponse, error) {
 	if req.GetUserId() == emptyValue {
-		return nil, status.Error(codes.InvalidArgument, "user_id is empty")
+		return nil, status.Error(codes.InvalidArgument, "User id is empty")
 	}
 
 	IsAdmin, err := s.auth.IsAdmin(ctx, req.GetUserId())
@@ -72,10 +73,10 @@ func (s *serverAPI) IsAdmin(ctx context.Context, req *ssov1.IsAdminRequest) (*ss
 
 func (s *serverAPI) Register(ctx context.Context, req *ssov1.RegisterRequest) (*ssov1.RegisterResponse, error) {
 	if req.GetEmail() == "" {
-		return nil, status.Error(codes.InvalidArgument, "email is empty")
+		return nil, status.Error(codes.InvalidArgument, "Email is empty")
 	}
 	if req.GetPassword() == "" {
-		return nil, status.Error(codes.InvalidArgument, "password is empty")
+		return nil, status.Error(codes.InvalidArgument, "Password is empty")
 	}
 	userId, err := s.auth.RegisterNewUser(ctx, req.GetEmail(), req.GetPassword())
 	if err != nil {
@@ -86,3 +87,22 @@ func (s *serverAPI) Register(ctx context.Context, req *ssov1.RegisterRequest) (*
 	}
 	return &ssov1.RegisterResponse{UserId: userId}, nil
 }
+
+func (s *serverAPI) CreateApp(ctx context.Context, req *ssov1.CreateAppRequest) (*ssov1.CreateAppResponse, error) {
+	if req.GetName() == "" {
+		return nil, status.Error(codes.InvalidArgument, "Name is empty")
+	}
+	if req.GetSecret() == "" {
+		return nil, status.Error(codes.InvalidArgument, "Secret is empty")
+	}
+	appId, err := s.auth.CreateApp(ctx, req.Name, req.Secret)
+	if err != nil {
+		if errors.Is(err, auth.ErrAppExist) {
+			return nil, status.Error(codes.AlreadyExists, fmt.Sprintf("App already exist with email: %s", req.GetName()))
+		}
+		return nil, status.Errorf(codes.Internal, "Iternal error: %s", err)
+	}
+	return &ssov1.CreateAppResponse{AppId: appId}, nil
+}
+
+// implement delete user from db
