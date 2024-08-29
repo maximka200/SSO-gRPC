@@ -1,7 +1,7 @@
 package main
 
 import (
-	"database/sql"
+	_ "database/sql"
 	"errors"
 	"flag"
 	"fmt"
@@ -12,34 +12,17 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
-// change "up" for up migration or "dirty_update" for change dirty value
 func main() {
-	var (
-		whatDo, migrationTable string
-		value                  int
-	)
-
-	flag.StringVar(&whatDo, "what_do", "", "choose what to do")
-	flag.IntVar(&value, "value", 0, "the value for change")
-	flag.StringVar(&migrationTable, "migrations-table", "", "table where changes are required")
-	flag.Parse()
-
-	switch whatDo {
-	case "up":
-		mustCreateMigrateUp()
-	case "dirty_update":
-		err := updateDirty(value, migrationTable)
-		if err != nil {
-			panic(fmt.Sprintf("error update dirty: %s", err))
-		}
-	}
+	mustCreateMigrateUp()
 }
 
+/* change dirty values in db :
 func updateDirty(val int, migrationsTable string) error {
 	db, err := sql.Open("sqlite3", "internal/storage/sso.db")
 	if err != nil {
 		return fmt.Errorf("cannot open db: %s", err)
 	}
+	defer db.Close()
 
 	_, err = db.Exec(fmt.Sprintf("UPDATE %s SET dirty=%d", migrationsTable, val))
 	if err != nil {
@@ -50,6 +33,7 @@ func updateDirty(val int, migrationsTable string) error {
 
 	return nil
 }
+*/
 
 func mustCreateMigrateUp() {
 	var storagePath, migrationsPath, migrationsTable string

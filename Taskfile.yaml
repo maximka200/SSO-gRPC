@@ -6,11 +6,5 @@ tasks:
       - go run cmd/sso/main.go --config=./config/local.yaml
   migration_up:
     cmds:
-      - go run ./cmd/migrator --what_do=up --storage-path=./internal/storage/sso.db --migrations-path=./migrations --migrations-table=main
-  migration_up_test:
-    cmds:
-      - go run ./cmd/migrator --what_do=up --storage-path=./internal/storage/sso.db --migrations-path=./tests/migration --migrations-table=migrations_tests
-  dirty_false:
-    cmds:
-      - go run ./cmd/migrator --what_do=dirty_update --value=0 --migrations-table=main
+      -  go run ./cmd/migrator --storage-path=./internal/storage/sso.db --migrations-path=./migrations --migrations-table=main
 # go env -w CGO_ENABLED=1
