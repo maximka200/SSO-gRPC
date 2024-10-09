@@ -48,7 +48,9 @@ type AppProvider interface {
 }
 
 // New returns a new object of the Auth struct
-func NewAuth(log *slog.Logger, usrSaver UserSaver, usrProvider UserProvider, appProvider AppProvider, appSaver AppSaver, tokenTTL time.Duration) *Auth {
+func NewAuth(log *slog.Logger, usrSaver UserSaver, 
+	usrProvider UserProvider, appProvider AppProvider,
+	appSaver AppSaver, tokenTTL time.Duration) *Auth {
 	return &Auth{
 		log:         log,
 		usrSaver:    usrSaver,
@@ -59,7 +61,8 @@ func NewAuth(log *slog.Logger, usrSaver UserSaver, usrProvider UserProvider, app
 	}
 }
 
-func (a *Auth) Login(ctx context.Context, email string, password string, appID int64) (string, error) {
+func (a *Auth) Login(ctx context.Context,
+	 email string, password string, appID int64) (string, error) {
 	const op = "auth.Login"
 
 	log := a.log.With(
