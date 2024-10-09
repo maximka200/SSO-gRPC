@@ -6,5 +6,5 @@ tasks:
       - go run cmd/sso/main.go --config=./config/local.yaml
   migration_up:
     cmds:
-      -  go run ./cmd/migrator --storage-path=./internal/storage/sso.db --migrations-path=./migrations --migrations-table=main
+      - goose -dir migrations sqlite3 ./internal/storage/sso.db up
 # go env -w CGO_ENABLED=1

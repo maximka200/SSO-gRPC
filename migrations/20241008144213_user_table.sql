@@ -1,3 +1,5 @@
+-- +goose Up
+-- +goose StatementBegin
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     email VARCHAR(255) UNIQUE NOT NULL,
@@ -15,3 +17,10 @@ CREATE TABLE IF NOT EXISTS apps (
 
 INSERT INTO apps (name, secret)
 VALUES ('test', 'test-secret');
+-- +goose StatementEnd
+
+-- +goose Down
+-- +goose StatementBegin
+DROP TABLE IF EXISTS users
+DROP TABLE IF EXISTS apps
+-- +goose StatementEnd
