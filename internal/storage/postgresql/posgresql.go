@@ -60,7 +60,7 @@ func (s *Storage) SaveUser(ctx context.Context, email string, passHash []byte) (
 }
 
 func (s *Storage) User(ctx context.Context, email string) (models.User, error) {
-	const op = "storage.postgessql.User"
+	const op = "storage.postgresql.User"
 
 	var us models.User
 
@@ -72,11 +72,13 @@ func (s *Storage) User(ctx context.Context, email string) (models.User, error) {
 	result := stmt.QueryRowContext(ctx, email)
 
 	if err = result.Scan(&us.ID, &us.Email, &us.PassHash); err != nil {
-		if err.(*pq.Error).Code == "23505" {
-			return us, storage.ErrUserExist
+		if pqErr, ok := err.(*pq.Error); ok {
+			if pqErr.Code == "23505" {
+				return us, storage.ErrAppExist
+			}
 		}
 
-		return us, fmt.Errorf("%s: %s", op, err.Error())
+		return us, fmt.Errorf("%s: %w", op, err)
 	}
 
 	return us, nil
@@ -104,7 +106,7 @@ func (s *Storage) App(ctx context.Context, appID int64) (models.App, error) {
 }
 
 func (s *Storage) IsAdmin(ctx context.Context, userID int64) (bool, error) {
-	const op = "storage.postgesql.IsAdmin"
+	const op = "storage.postgresql.IsAdmin"
 
 	var res bool
 
@@ -127,23 +129,22 @@ func (s *Storage) IsAdmin(ctx context.Context, userID int64) (bool, error) {
 }
 
 func (s *Storage) SaveApp(ctx context.Context, name string, secret string) (int64, error) {
-	const op = "storage.postgesql.CreateApp"
+	const op = "storage.postgresql.CreateApp"
 
-	stmt, err := s.db.Prepare(fmt.Sprintf("INSERT INTO %s (name, secret) values ($1, $2)", appsTable))
+	stmt, err := s.db.Prepare(fmt.Sprintf("INSERT INTO %s (name, secret) values ($1, $2) RETURNING id", appsTable))
 	if err != nil {
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
 
-	res, err := stmt.ExecContext(ctx, name, secret)
-	if err != nil {
-		if err.(*pq.Error).Code == "23505" {
-			return 0, storage.ErrAppExist
+	var id int64
+	if err := stmt.QueryRowContext(ctx, name, secret).Scan(&id); err != nil {
+		if pqErr, ok := err.(*pq.Error); ok {
+			if pqErr.Code == "23505" {
+				return 0, storage.ErrAppExist
+			}
 		}
-		return 0, fmt.Errorf("%s: %s", op, err.Error())
-	}
-	id, err := res.LastInsertId()
-	if err != nil {
-		return 0, fmt.Errorf("%s: %s", op, err.Error())
+
+		return 0, fmt.Errorf("%s: %w", op, err)
 	}
 
 	return id, nil

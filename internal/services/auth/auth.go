@@ -157,7 +157,7 @@ func (a *Auth) IsAdmin(ctx context.Context, userId int64) (bool, error) {
 func (a *Auth) CreateApp(ctx context.Context, name string, secret string) (int64, error) {
 	const op = "auth.NewApp"
 
-	log := slog.With(slog.String("op", op), slog.String("userId", name))
+	log := slog.With(slog.String("op", op), slog.String("username", name))
 
 	appId, err := a.appSaver.SaveApp(ctx, name, secret)
 	if err != nil {
@@ -165,7 +165,7 @@ func (a *Auth) CreateApp(ctx context.Context, name string, secret string) (int64
 			log.Error("app already exist")
 			return 0, fmt.Errorf("%s: %w", op, ErrAppExist)
 		}
-		log.Error("error adding a new app to the database")
+		log.Error("error adding a new app to the database" + err.Error())
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
 
