@@ -4,25 +4,27 @@ import (
 	"fmt"
 	"log/slog"
 	grpcapp "sso/internal/app/grpc"
+	"sso/internal/config"
 	"sso/internal/services/auth"
-	sqlite "sso/internal/storage/sqllite"
-	"time"
+	"sso/internal/storage/postgresql"
+	// sqlite "sso/internal/storage/sqllite"
+	//"time"
 )
 
 type App struct {
 	GRPCSrv *grpcapp.App
 }
 
-func New(log *slog.Logger, grpcPort int, storagePath string, tokenTTL time.Duration) *App { // TTL - time to live
+func New(log *slog.Logger, cfg *config.Config) *App { // TTL - time to live
 
-	storage, err := sqlite.NewStorage(storagePath)
+	storage, err := postgresql.NewDB(cfg)
 	if err != nil {
 		panic(err)
 	}
 
-	auth := auth.NewAuth(log, storage, storage, storage, storage, tokenTTL)
+	auth := auth.NewAuth(log, storage, storage, storage, storage, cfg.GRPC.Timeout)
 
-	grpcApp := grpcapp.New(log, grpcPort, auth)
+	grpcApp := grpcapp.New(log, cfg.GRPC.Port, auth)
 
 	return &App{
 		GRPCSrv: grpcApp,

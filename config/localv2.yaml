@@ -1,0 +1,15 @@
+env: "local" # dev, prod
+storage_path: ""
+token_ttl: 1h
+timeout: 1h
+grpc:
+  port: 8080
+  timeout: 1h
+db:
+  username: "user"
+  password: "password"
+  host: "localhost"
+  port: "5432"
+  dbname: "database"
+  sslmode: "disable"
+  timeout: 1h

@@ -45,7 +45,7 @@ func (s *serverAPI) Login(ctx context.Context, req *ssov1.LoginRequest) (*ssov1.
 		if errors.Is(err, auth.ErrInvalidCredentials) {
 			return nil, status.Error(codes.NotFound, "Invalid credentials")
 		}
-		return nil, status.Error(codes.Internal, "Internal error")
+		return nil, status.Error(codes.Internal, "Iternal error: "+err.Error())
 	}
 
 	return &ssov1.LoginResponse{Token: token}, nil
@@ -65,7 +65,7 @@ func (s *serverAPI) IsAdmin(ctx context.Context, req *ssov1.IsAdminRequest) (*ss
 		if errors.Is(err, auth.ErrUserNotFound) {
 			return nil, status.Error(codes.NotFound, fmt.Sprintf("User not found with id: %d", req.GetUserId()))
 		}
-		return nil, status.Error(codes.Internal, "Not correctly user_id or internal error")
+		return nil, status.Error(codes.Internal, "Iternal error: "+err.Error())
 	}
 
 	return &ssov1.IsAdminResponse{IsAdmin: IsAdmin}, nil
@@ -83,7 +83,7 @@ func (s *serverAPI) Register(ctx context.Context, req *ssov1.RegisterRequest) (*
 		if errors.Is(err, auth.ErrUserExists) {
 			return nil, status.Error(codes.AlreadyExists, fmt.Sprintf("User already exist with email: %s", req.GetEmail()))
 		}
-		return nil, status.Error(codes.Internal, "Internal error")
+		return nil, status.Error(codes.Internal, "Iternal error: "+err.Error())
 	}
 	return &ssov1.RegisterResponse{UserId: userId}, nil
 }
@@ -100,7 +100,7 @@ func (s *serverAPI) CreateApp(ctx context.Context, req *ssov1.CreateAppRequest) 
 		if errors.Is(err, auth.ErrAppExist) {
 			return nil, status.Error(codes.AlreadyExists, fmt.Sprintf("App already exist with email: %s", req.GetName()))
 		}
-		return nil, status.Errorf(codes.Internal, "Iternal error: %s", err)
+		return nil, status.Errorf(codes.Internal, "Iternal error: "+err.Error())
 	}
 	return &ssov1.CreateAppResponse{AppId: appId}, nil
 }
