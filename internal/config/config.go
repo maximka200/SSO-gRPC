@@ -10,9 +10,20 @@ import (
 
 type Config struct {
 	Env         string        `yaml:"env" env-default:"local"`
-	StoragePath string        `yaml:"storage_path" env-required:"true"`
+	StoragePath string        `yaml:"storage_path"`
 	TokenTTL    time.Duration `yaml:"token_ttl" env-required:"true"`
 	GRPC        GRPCConfig    `yaml:"grpc"`
+	DB          DBConfig      `yaml:"db"`
+}
+
+type DBConfig struct {
+	Username string        `mapstructure:"username"`
+	Password string        `mapstructure:"password"`
+	Host     string        `mapstructure:"host"`
+	Port     string        `mapstructure:"port"`
+	DBname   string        `mapstructure:"dbname"`
+	SSLmode  string        `mapstructure:"sslmode"`
+	Timeout  time.Duration `mapstructure:"timeout"`
 }
 
 type GRPCConfig struct {
@@ -46,7 +57,7 @@ func MustByLoad(configPath string) *Config {
 // парсинг path-a конфига из командной строки в виде: --config="path/path/..."
 func fetchConfig() string {
 	var res string
-	flag.StringVar(&res, "config", "./config/local.yaml", "path to config file")
+	flag.StringVar(&res, "config", "./config/localv2.yaml", "path to config file")
 	flag.Parse()
 
 	if res == "" {

@@ -4,7 +4,15 @@ tasks:
   run:
     cmds:
       - go run cmd/sso/main.go --config=./config/local.yaml
-  migration_up:
+  migration_sqlite_up:
     cmds:
       - goose -dir migrations sqlite3 ./internal/storage/sso.db up
+  up_postgres:
+    - docker run --name forpostgres -p 5432:5432 -e POSTGRES_USER=user -e POSTGRES_PASSWORD=password -d ubuntu/postgres
+  createdb:
+    - docker exec -it forpostgres createdb --username=user --owner=user database
+  migrate_pg_up:
+    - goose -dir schema postgres "postgres://user:password@localhost:5432/database?sslmode=disable" up
+  migrate_pg_down:
+    - goose -dir schema postgres "postgres://user:password@localhost:5432/database?sslmode=disable" down
 # go env -w CGO_ENABLED=1

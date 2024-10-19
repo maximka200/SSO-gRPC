@@ -48,7 +48,7 @@ type AppProvider interface {
 }
 
 // New returns a new object of the Auth struct
-func NewAuth(log *slog.Logger, usrSaver UserSaver, 
+func NewAuth(log *slog.Logger, usrSaver UserSaver,
 	usrProvider UserProvider, appProvider AppProvider,
 	appSaver AppSaver, tokenTTL time.Duration) *Auth {
 	return &Auth{
@@ -62,7 +62,7 @@ func NewAuth(log *slog.Logger, usrSaver UserSaver,
 }
 
 func (a *Auth) Login(ctx context.Context,
-	 email string, password string, appID int64) (string, error) {
+	email string, password string, appID int64) (string, error) {
 	const op = "auth.Login"
 
 	log := a.log.With(
@@ -125,7 +125,7 @@ func (a *Auth) RegisterNewUser(ctx context.Context, email string, password strin
 			log.Error("user already exist")
 			return 0, fmt.Errorf("%s: %w", op, ErrUserExists)
 		}
-		log.Error("failed to save user")
+		log.Error("failed to save user: " + err.Error())
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
 
