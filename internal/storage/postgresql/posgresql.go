@@ -53,7 +53,9 @@ func (s *Storage) SaveUser(ctx context.Context, email string, passHash []byte) (
 
 	err = stmt.QueryRowContext(ctx, email, passHash).Scan(&id)
 	if err != nil {
-		return 0, fmt.Errorf("%s: %s", op, err.Error())
+		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
+			return 0, storage.ErrUserExist
+		}
 	}
 
 	return id, nil
@@ -69,16 +71,12 @@ func (s *Storage) User(ctx context.Context, email string) (models.User, error) {
 		return us, fmt.Errorf("%s: %s", op, err.Error())
 	}
 
-	result := stmt.QueryRowContext(ctx, email)
-
-	if err = result.Scan(&us.ID, &us.Email, &us.PassHash); err != nil {
-		if pqErr, ok := err.(*pq.Error); ok {
-			if pqErr.Code == "23505" {
-				return us, storage.ErrAppExist
-			}
+	if err = stmt.QueryRowContext(ctx, email).Scan(&us.ID, &us.Email, &us.PassHash); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return us, storage.ErrUserNotFound
 		}
 
-		return us, fmt.Errorf("%s: %w", op, err)
+		return us, fmt.Errorf("%s: %s", op, err.Error())
 	}
 
 	return us, nil
@@ -100,6 +98,8 @@ func (s *Storage) App(ctx context.Context, appID int64) (models.App, error) {
 		if errors.Is(err, sql.ErrNoRows) {
 			return app, storage.ErrAppNotFound
 		}
+
+		return app, fmt.Errorf("%s: %s", op, err.Error())
 	}
 
 	return app, nil
@@ -138,10 +138,8 @@ func (s *Storage) SaveApp(ctx context.Context, name string, secret string) (int6
 
 	var id int64
 	if err := stmt.QueryRowContext(ctx, name, secret).Scan(&id); err != nil {
-		if pqErr, ok := err.(*pq.Error); ok {
-			if pqErr.Code == "23505" {
-				return 0, storage.ErrAppExist
-			}
+		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
+			return 0, storage.ErrAppExist
 		}
 
 		return 0, fmt.Errorf("%s: %w", op, err)

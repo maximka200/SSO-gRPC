@@ -165,7 +165,7 @@ func (a *Auth) CreateApp(ctx context.Context, name string, secret string) (int64
 			log.Error("app already exist")
 			return 0, fmt.Errorf("%s: %w", op, ErrAppExist)
 		}
-		log.Error("error adding a new app to the database" + err.Error())
+		log.Error("error adding a new app to the database: " + err.Error())
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
 
