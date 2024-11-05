@@ -4,7 +4,8 @@ CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash BYTEA NOT NULL,
-    is_admin BOOLEAN NOT NULL DEFAULT FALSE
+    roles TEXT[] NOT NULL DEFAULT '{"user"}',
+    registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_email ON users (email);

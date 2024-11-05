@@ -75,7 +75,7 @@ func (a *Auth) Login(ctx context.Context,
 	user, err := a.usrProvider.User(ctx, email)
 	if err != nil {
 		if errors.Is(err, storage.ErrUserNotFound) {
-			log.Error("not corrected login/password")
+			log.Error("not corrected login/password 1")
 			return "", fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
 		}
 		log.Error("failed to get user")
@@ -83,7 +83,7 @@ func (a *Auth) Login(ctx context.Context,
 	}
 
 	if err := bcrypt.CompareHashAndPassword(user.PassHash, []byte(password)); err != nil {
-		log.Error("not corrected login/password")
+		log.Error(string(user.PassHash))
 		return "", fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
 	}
 

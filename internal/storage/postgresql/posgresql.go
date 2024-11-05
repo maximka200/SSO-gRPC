@@ -65,19 +65,22 @@ func (s *Storage) User(ctx context.Context, email string) (models.User, error) {
 	const op = "storage.postgresql.User"
 
 	var us models.User
+	var roles pq.StringArray
 
-	stmt, err := s.db.Prepare(fmt.Sprintf("SELECT id, email, password_hash FROM %s WHERE email=$1", usersTable))
+	stmt, err := s.db.Prepare(fmt.Sprintf("SELECT id, email, password_hash, roles FROM %s WHERE email=$1", usersTable))
 	if err != nil {
 		return us, fmt.Errorf("%s: %s", op, err.Error())
 	}
 
-	if err = stmt.QueryRowContext(ctx, email).Scan(&us.ID, &us.Email, &us.PassHash); err != nil {
+	if err = stmt.QueryRowContext(ctx, email).Scan(&us.ID, &us.Email, &us.PassHash, &roles); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return us, storage.ErrUserNotFound
 		}
 
 		return us, fmt.Errorf("%s: %s", op, err.Error())
 	}
+
+	us.Roles = roles
 
 	return us, nil
 }
@@ -146,4 +149,43 @@ func (s *Storage) SaveApp(ctx context.Context, name string, secret string) (int6
 	}
 
 	return id, nil
+}
+
+func (s *Storage) SetRoles(ctx context.Context, email string, roles []string) error {
+	const op = "storage.postgresql.SetRoles"
+
+	stmt, err := s.db.Prepare(fmt.Sprintf("UPDATE %s SET roles = $1 WHERE email = $2", usersTable))
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	if _, err := stmt.ExecContext(ctx, roles, email); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return storage.ErrUserNotFound
+		}
+
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}
+
+func (s *Storage) GetRoles(ctx context.Context, email string) ([]string, error) {
+	const op = "storage.postgresql.GetRoles"
+
+	stmt, err := s.db.Prepare(fmt.Sprintf("SELECT roles FROM %s WHERE email = $1", usersTable))
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+	var roles pq.StringArray
+
+	if err = stmt.QueryRowContext(ctx, email).Scan(roles); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, storage.ErrUserNotFound
+		}
+
+		return nil, fmt.Errorf("%s: %s", op, err.Error())
+	}
+
+	return roles, nil
 }
