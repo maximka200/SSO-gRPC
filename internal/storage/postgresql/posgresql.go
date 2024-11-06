@@ -8,6 +8,7 @@ import (
 	"sso/internal/config"
 	"sso/internal/domain/models"
 	"sso/internal/services/storage"
+	"strings"
 
 	"github.com/lib/pq"
 )
@@ -154,12 +155,13 @@ func (s *Storage) SaveApp(ctx context.Context, name string, secret string) (int6
 func (s *Storage) SetRoles(ctx context.Context, email string, roles []string) error {
 	const op = "storage.postgresql.SetRoles"
 
+	sqlRoles := CreateSQlArrayString(roles)
 	stmt, err := s.db.Prepare(fmt.Sprintf("UPDATE %s SET roles = $1 WHERE email = $2", usersTable))
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	if _, err := stmt.ExecContext(ctx, roles, email); err != nil {
+	if _, err := stmt.ExecContext(ctx, sqlRoles, email); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return storage.ErrUserNotFound
 		}
@@ -179,7 +181,7 @@ func (s *Storage) GetRoles(ctx context.Context, email string) ([]string, error) 
 	}
 	var roles pq.StringArray
 
-	if err = stmt.QueryRowContext(ctx, email).Scan(roles); err != nil {
+	if err = stmt.QueryRowContext(ctx, email).Scan(&roles); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, storage.ErrUserNotFound
 		}
@@ -188,4 +190,8 @@ func (s *Storage) GetRoles(ctx context.Context, email string) ([]string, error) 
 	}
 
 	return roles, nil
+}
+
+func CreateSQlArrayString(arr []string) string {
+	return "{" + strings.Join(arr, ",") + "}"
 }
