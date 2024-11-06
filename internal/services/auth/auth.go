@@ -16,9 +16,9 @@ import (
 var (
 	ErrInvalidCredentials = errors.New("invalid credentials")
 	ErrUserExists         = errors.New("user already exist")
-	ErrInvalidAppID       = errors.New("invalid appID")
 	ErrUserNotFound       = errors.New("user not found")
 	ErrAppExist           = errors.New("app already exist")
+	ErrInvalidRoles       = errors.New("invalid roles")
 )
 
 type Auth struct {
@@ -36,7 +36,8 @@ type UserSaver interface {
 
 type UserProvider interface {
 	User(ctx context.Context, email string) (modelU models.User, err error)
-	IsAdmin(ctx context.Context, userID int64) (isAdmin bool, err error)
+	SetRoles(ctx context.Context, email string, roles []string) error
+	GetRoles(ctx context.Context, email string) ([]string, error)
 }
 
 type AppSaver interface {
@@ -134,7 +135,7 @@ func (a *Auth) RegisterNewUser(ctx context.Context, email string, password strin
 	return id, nil
 }
 
-func (a *Auth) IsAdmin(ctx context.Context, userId int64) (bool, error) {
+/* func (a *Auth) IsAdmin(ctx context.Context, userId int64) (bool, error) {
 	const op = "auth.IsAdmin"
 
 	log := slog.With(slog.String("op", op), slog.Int64("userId", userId))
@@ -152,7 +153,7 @@ func (a *Auth) IsAdmin(ctx context.Context, userId int64) (bool, error) {
 	log.Info("success checking is admin", slog.Bool("isAdmin", result))
 
 	return result, nil
-}
+} */
 
 func (a *Auth) CreateApp(ctx context.Context, name string, secret string) (int64, error) {
 	const op = "auth.NewApp"
@@ -172,4 +173,54 @@ func (a *Auth) CreateApp(ctx context.Context, name string, secret string) (int64
 	log.Info("success create new app", slog.String("name", name))
 
 	return appId, nil
+}
+
+// // SetRoles sets roles for a user with validation
+func (a *Auth) SetRoles(ctx context.Context, email string, roles []string) error {
+	const op = "auth.SetRoles"
+
+	log := a.log.With(
+		slog.String("op", op),
+		slog.String("email", email),
+	)
+
+	for _, role := range roles {
+		if role != "admin" && role != "user" && role != "manager" {
+			log.Error("invalid role")
+			return fmt.Errorf("%s: %s", op, ErrInvalidRoles)
+		}
+	}
+
+	err := a.usrProvider.SetRoles(ctx, email, roles)
+	if err != nil {
+		log.Error("failed to set roles")
+		if errors.Is(err, storage.ErrUserNotFound) {
+			return fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
+		}
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	log.Info("successfully set roles for user")
+	return nil
+}
+
+func (a *Auth) GetRoles(ctx context.Context, email string) ([]string, error) {
+	const op = "auth.GetRoles"
+
+	log := a.log.With(
+		slog.String("op", op),
+		slog.String("email", email),
+	)
+
+	roles, err := a.usrProvider.GetRoles(ctx, email)
+	if err != nil {
+		log.Error("failed to get roles")
+		if errors.Is(err, storage.ErrUserNotFound) {
+			return nil, fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
+		}
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	log.Info("successfully got roles for user")
+	return roles, nil
 }

@@ -109,29 +109,6 @@ func (s *Storage) App(ctx context.Context, appID int64) (models.App, error) {
 	return app, nil
 }
 
-func (s *Storage) IsAdmin(ctx context.Context, userID int64) (bool, error) {
-	const op = "storage.postgresql.IsAdmin"
-
-	var res bool
-
-	stmt, err := s.db.Prepare(fmt.Sprintf("SELECT is_admin FROM %s WHERE id=$1", usersTable))
-	if err != nil {
-		return false, fmt.Errorf("%s: %s", op, err.Error())
-	}
-
-	result := stmt.QueryRowContext(ctx, userID)
-
-	if err = result.Scan(&res); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return false, storage.ErrUserNotFound
-		}
-
-		return false, fmt.Errorf("%s: %s", op, err.Error())
-	}
-
-	return res, nil
-}
-
 func (s *Storage) SaveApp(ctx context.Context, name string, secret string) (int64, error) {
 	const op = "storage.postgresql.CreateApp"
 
