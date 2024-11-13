@@ -19,6 +19,8 @@ type Auth interface {
 	RegisterNewUser(ctx context.Context, email string, password string) (userID int64, err error)
 	IsAdmin(ctx context.Context, userID int64) (flag bool, err error)
 	CreateApp(ctx context.Context, name string, secret string) (appId int64, err error)
+	GetRoles(ctx context.Context, email string) (roles []string, err error)
+	SetRoles(ctx context.Context, roles []string) (err error)
 }
 
 type serverAPI struct {
@@ -103,6 +105,34 @@ func (s *serverAPI) CreateApp(ctx context.Context, req *ssov1.CreateAppRequest) 
 		return nil, status.Errorf(codes.Internal, "Iternal error: "+err.Error())
 	}
 	return &ssov1.CreateAppResponse{AppId: appId}, nil
+}
+
+func (s *serverAPI) GetRoles(ctx context.Context, req *ssov1.GetRolesRequest) (*ssov1.GetRolesResponse, error) {
+	if req.GetEmail() == "" {
+		return nil, status.Error(codes.InvalidArgument, "Email is empty")
+	}
+
+	resp, err := s.auth.GetRoles(ctx, req.GetEmail())
+	if err != nil {
+		if errors.Is(err, auth.ErrUserExists) {
+			return nil, status.Error(codes.AlreadyExists, fmt.Sprintf("User already exist with email: %s", req.GetEmail()))
+		}
+		return nil, status.Error(codes.Internal, "Iternal error: "+err.Error())
+	}
+
+	roles := CreateRolesSlice(resp)
+	return &ssov1.GetRolesResponse{Roles: roles}, nil
+}
+
+func CreateRolesSlice(input []string) []*ssov1.Role {
+	var roles []*ssov1.Role
+	for _, elem := range input {
+		roles = append(roles, &ssov1.Role{
+			Role: elem,
+		})
+	}
+
+	return roles
 }
 
 // implement delete user from db

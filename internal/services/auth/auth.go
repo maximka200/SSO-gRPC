@@ -175,7 +175,6 @@ func (a *Auth) CreateApp(ctx context.Context, name string, secret string) (int64
 	return appId, nil
 }
 
-// // SetRoles sets roles for a user with validation
 func (a *Auth) SetRoles(ctx context.Context, email string, roles []string) error {
 	const op = "auth.SetRoles"
 
