@@ -169,6 +169,25 @@ func (s *Storage) GetRoles(ctx context.Context, email string) ([]string, error) 
 	return roles, nil
 }
 
+func (s *Storage) DeleteUser(ctx context.Context, email string) error {
+	const op = "storage.postgresql.GetRoles"
+
+	stmt, err := s.db.Prepare(fmt.Sprintf("DELETE FROM %s WHERE email = $1", usersTable))
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	if _, err = stmt.ExecContext(ctx, email); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return storage.ErrUserNotFound
+		}
+
+		return fmt.Errorf("%s: %s", op, err.Error())
+	}
+
+	return nil
+}
+
 func CreateSQlArrayString(arr []string) string {
 	return "{" + strings.Join(arr, ",") + "}"
 }

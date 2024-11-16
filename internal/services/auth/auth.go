@@ -35,9 +35,10 @@ type UserSaver interface {
 }
 
 type UserProvider interface {
+	DeleteUser(ctx context.Context, email string) (err error)
 	User(ctx context.Context, email string) (modelU models.User, err error)
-	SetRoles(ctx context.Context, email string, roles []string) error
-	GetRoles(ctx context.Context, email string) ([]string, error)
+	SetRoles(ctx context.Context, email string, roles []string) (err error)
+	GetRoles(ctx context.Context, email string) (roles []string, err error)
 }
 
 type AppSaver interface {
@@ -222,4 +223,24 @@ func (a *Auth) GetRoles(ctx context.Context, email string) ([]string, error) {
 
 	log.Info("successfully got roles for user")
 	return roles, nil
+}
+
+func (a *Auth) DeleteUser(ctx context.Context, email string) error {
+	const op = "auth.GetRoles"
+
+	log := a.log.With(
+		slog.String("op", op),
+		slog.String("email", email),
+	)
+
+	err := a.usrProvider.DeleteUser(ctx, email)
+	if err != nil {
+		log.Error("failed delete user")
+		if errors.Is(err, storage.ErrUserNotFound) {
+			return fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
+		}
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
 }
